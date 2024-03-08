@@ -1,4 +1,4 @@
-Tumor Suppressor Genes;Oncogenes;Protein Kinases;Cell Differentiation Markers;Transcription Factors;Cytokines and Growth Factors
+tumor_suppressor_genes;oncogenes;protein_kinases;cell_differentiation_markers;transcription_factors;cytokines_and_growth_factors
 AMER1;ABI1;AAK1;ABCB1;AATF;ADA2
 APC;ABL1;AATK;ABCG2;ABT1;ADIPOQ
 ASXL1;ABL2;ABL1;ACE;ACVR2A;ADM

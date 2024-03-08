@@ -1,0 +1,3 @@
+omics_raw_input: input/input.csv
+omics_signatures: omics/signatures.csv
+omics_processed_output_dir: omics/output
