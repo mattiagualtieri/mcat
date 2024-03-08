@@ -1,0 +1,3 @@
+input: ../input/input.csv
+signatures: ../omics/signatures.csv
+output_dir: ../omics/output
