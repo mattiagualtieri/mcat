@@ -15,6 +15,6 @@ def preprocess_labels(input_file, output_file):
             case_group = hdf5_file.create_group(case_id)
             labels_group = case_group.create_group('labels')
             labels_group.create_dataset('overall_survival', data=np.array(case_data['overall_survival']), dtype='i')
-            labels_group.create_dataset('risk', data=np.array(risk_labels[case_id]), dtype='i')
+            labels_group.create_dataset('survival_risk', data=np.array(risk_labels[case_id]), dtype='i')
 
     print(f'Created labels datasets for {cases} cases')

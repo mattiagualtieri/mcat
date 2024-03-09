@@ -1,3 +1,3 @@
 .idea
 input
-omics/output
+__pycache__
