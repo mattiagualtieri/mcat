@@ -5,9 +5,10 @@ import h5py
 
 from torch.utils.data import DataLoader
 
-from dataset.dataset import MultimodalDataset
 from labels.preprocessing import preprocess_labels
 from omics.preprocessing import preprocess_omics
+from dataset.dataset import MultimodalDataset
+
 
 
 def main():
