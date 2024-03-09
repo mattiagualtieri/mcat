@@ -13,9 +13,9 @@ def main():
 
     omics_raw_input = config['omics_raw_input']
     omics_signatures = config['omics_signatures']
-    omics_processed_output_dir = config['omics_processed_output_dir']
-    preprocess_omics(omics_raw_input, omics_signatures, omics_processed_output_dir)
-    omics_input_dir = omics_processed_output_dir
+    dataset_file = config['dataset_file']
+    preprocess_omics(omics_raw_input, omics_signatures, dataset_file)
+    print(f'Created dataset: {dataset_file}')
 
 
 if __name__ == '__main__':
