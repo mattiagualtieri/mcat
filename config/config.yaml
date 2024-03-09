@@ -1,3 +1,3 @@
 dataset_file: input/dataset.hdf5
-omics_raw_input: input/input.csv
+raw_input: input/input.csv
 omics_signatures: omics/signatures.csv
