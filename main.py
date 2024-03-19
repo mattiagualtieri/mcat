@@ -10,7 +10,6 @@ from omics.preprocessing import preprocess_omics
 from dataset.dataset import MultimodalDataset
 
 
-
 def main():
     with open('config/config.yaml') as config_file:
         config = yaml.load(config_file, Loader=yaml.FullLoader)
@@ -30,12 +29,19 @@ def main():
         preprocess_omics(raw_input, omics_signatures, dataset_file)
         print(f'Added omics data to dataset {dataset_file}')
 
+        # here there should be all the part in which:
+        # - take each WSI slide
+        # - divide it into M patches (256x256)
+        # - embed each patch with a ResNet50 (pretrained), so we obtain a Mx1024 matrix
+        # - this matrix is created into a .pt file, that we must read and add to the dataset
+        print('Note: skipping all patches creation and embedding part...')
+
     with h5py.File(dataset_file, 'r') as hdf5_file:
         dataset = MultimodalDataset(hdf5_file)
         dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
         # Iterate over batches of data from your dataset
-        for omics_data, overall_survival, survival_risk in dataloader:
+        for batch_index, (omics_data, overall_survival, survival_risk) in enumerate(dataloader):
             # Process the data as needed
             # print("Omics Data:", omics_data)
             print("Overall Survival:", overall_survival)
