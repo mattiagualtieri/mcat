@@ -1,5 +1,9 @@
-dataset_file: data/dataset.hdf5
-# inputs of preprocessing
-raw_input: data/data.csv
-omics_signatures: omics/signatures.csv
-patch_emb_dir: data/patch_embeddings
+device: cpu
+inputs:
+  raw_input: data/data.csv
+  omics_signatures: data/signatures.csv
+  patch_emb_dir: data/patch_embeddings
+dataset:
+  dataset_file: data/dataset.hdf5
+training:
+  epochs: 10
