@@ -7,3 +7,6 @@ dataset:
   dataset_file: data/dataset.hdf5
 training:
   epochs: 10
+  lr: 0.0002
+  weight_decay: 0.00001
+  grad_acc_step: 32
