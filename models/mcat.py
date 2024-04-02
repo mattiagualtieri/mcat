@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 class AttentionNetGated(nn.Module):
-    def __init__(self, input_dim=256, hidden_dim=256, dropout=0.25, n_classes=1):
+    def __init__(self, input_dim=256, hidden_dim=256, dropout=True, n_classes=1):
         r"""
         Attention Network with Sigmoid Gating (3 fc layers)
 
@@ -139,16 +139,27 @@ class MultimodalCoAttentionTransformer(nn.Module):
         h = self.fusion_layer(concat)
 
         # Survival Layer
-        # logits: output probabilities (n_classes)
+
+        # logits: classifier output
+        # size   --> (1, 4)
+        # domain --> R
         logits = self.classifier(h).unsqueeze(0)
-        # Y_hat: predicted class
-        Y_hat = torch.topk(logits, 1, dim=1)[1]
+        # hazards: probability of patient death in interval j
+        # size   --> (1, 4)
+        # domain --> [0, 1]
         hazards = torch.sigmoid(logits)
-        S = torch.cumprod(1 - hazards, dim=1)
+        # survs: probability of patient survival after time t
+        # size   --> (1, 4)
+        # domain --> [0, 1]
+        survs = torch.cumprod(1 - hazards, dim=1)
+        # Y: predicted probability distribution
+        # size   --> (1, 4)
+        # domain --> [0, 1] (probability distribution)
+        Y = F.softmax(logits, dim=1)
 
         attention_scores = {'coattn': A_coattn, 'path': A_path, 'omic': A_omic}
 
-        return hazards, S, Y_hat, attention_scores
+        return hazards, survs, Y, attention_scores
 
 
 def test():
@@ -158,7 +169,8 @@ def test():
     omics = [torch.randn(dim) for dim in [100, 200, 300, 400, 500, 600]]
     omic_sizes = [omic.size()[0] for omic in omics]
     model = MultimodalCoAttentionTransformer(omic_sizes=omic_sizes)
-    hazards, S, Y_hat, attention_scores = model(wsi, omics)
+    # hazards, S, Y_hat, attention_scores = model(wsi, omics)
+    Y = model(wsi, omics)
 
     print('Forward successful')
 

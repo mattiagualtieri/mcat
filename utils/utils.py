@@ -16,7 +16,10 @@ def preprocess_labels(input_file, output_file):
             case_data = data.loc[case_id]
             case_group = hdf5_file.create_group(case_id)
             labels_group = case_group.create_group('labels')
-            labels_group.create_dataset('overall_survival', data=np.array(case_data['overall_survival']), dtype='i')
+            labels_group.create_dataset('overall_survival_days', data=np.array(case_data['overall_survival']),
+                                        dtype='i')
+            labels_group.create_dataset('overall_survival_months', data=np.array(case_data['overall_survival'] / 30),
+                                        dtype='i')
             labels_group.create_dataset('survival_risk', data=np.array(risk_labels[case_id]), dtype='i')
 
     print(f'Created labels datasets for {cases} cases')
@@ -38,8 +41,6 @@ def preprocess_omics(input_file, signatures_file, output_file):
                 for gene in signatures[omics_category].dropna():
                     if gene in omics_data:
                         data.append(omics_data[gene])
-                    else:
-                        print(f'Excuse me {gene}')
                 omics_group.create_dataset(omics_category, data=np.array(data), dtype='f')
     print(f'Created omics datasets for {cases} cases')
 

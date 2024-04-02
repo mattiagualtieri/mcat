@@ -15,7 +15,8 @@ class MultimodalDataset(Dataset):
         case_group = self.hdf5_file[case_id]
 
         labels_group = case_group['labels']
-        overall_survival = torch.tensor(labels_group['overall_survival'][()])
+        # overall_survival_days = torch.tensor(labels_group['overall_survival_days'][()])
+        overall_survival_months = torch.tensor(labels_group['overall_survival_months'][()])
         survival_risk = torch.tensor(labels_group['survival_risk'][()])
 
         omics_group = case_group['omics']
@@ -24,4 +25,4 @@ class MultimodalDataset(Dataset):
         wsi_group = case_group['wsi']
         patches_embeddings = torch.tensor(wsi_group['patches'][()])
 
-        return overall_survival, survival_risk, omics_data, patches_embeddings
+        return overall_survival_months, survival_risk, omics_data, patches_embeddings
