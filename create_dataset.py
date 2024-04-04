@@ -37,6 +37,9 @@ def create_dataset():
     preprocess_patch_embeddings(patch_emb_dir, dataset_file)
     print(f'Added patch embeddings to dataset {dataset_file}')
 
+    print('Removing incomplete samples...')
+    remove_incomplete_cases(dataset_file)
+
     print(f'Dataset created successfully')
 
 

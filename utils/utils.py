@@ -61,6 +61,39 @@ def preprocess_patch_embeddings(emb_dir, output_file):
     print(f'Created WSI datasets for {cases} cases')
 
 
+def remove_incomplete_cases(dataset_file):
+    with h5py.File(dataset_file, 'r+') as hdf5_file:
+        cases = list(hdf5_file.keys())
+        removed = 0
+        print(f'Total cases in dataset: {len(cases)}')
+        for case_id in cases:
+            to_remove = False
+            case_group = hdf5_file[case_id]
+            try:
+                case_group['labels']
+            except KeyError:
+                print(f'"labels" group not found for case {case_id}')
+                to_remove = True
+            try:
+                case_group['omics']
+            except KeyError:
+                print(f'"omics" group not found for case {case_id}')
+                to_remove = True
+            try:
+                case_group['wsi']
+            except KeyError:
+                print(f'"wsi" group not found for case {case_id}')
+                to_remove = True
+
+            if to_remove:
+                print(f'Deleting case {case_id}')
+                del hdf5_file[case_id]
+                removed += 1
+
+        cases = list(hdf5_file.keys())
+        print(f'Total complete cases in dataset: {len(cases)}')
+
+
 def get_omics_sizes_from_dataset(hdf5_file):
     category_counts = {}
     with h5py.File(hdf5_file, 'r') as f:
