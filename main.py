@@ -14,9 +14,15 @@ def main():
     with open('config/config.yaml') as config_file:
         config = yaml.load(config_file, Loader=yaml.FullLoader)
 
+    device = config['device']
+    if device == 'cuda' and not torch.cuda.is_available():
+        print('CUDA not available')
+        device = 'cpu'
+    print(f'Running on {device}')
+
     dataset_file = config['dataset']['dataset_file']
 
-    with h5py.File(dataset_file, 'r') as hdf5_file:
+    with (h5py.File(dataset_file, 'r') as hdf5_file):
         # Dataset
         dataset = MultimodalDataset(hdf5_file)
         train_size = config['training']['train_size']
@@ -29,6 +35,7 @@ def main():
         # Model
         omics_sizes = get_omics_sizes_from_dataset(dataset_file)
         model = MultimodalCoAttentionTransformer(omic_sizes=omics_sizes)
+        model.to(device=device)
         # Loss function
         if config['training']['loss'] == 'ce':
             print('Using CrossEntropyLoss during training')
@@ -53,6 +60,10 @@ def main():
             risk_scores = []
             event_times = []
             for batch_index, (overall_survival_months, survival_risk, omics_data, patches_embeddings) in enumerate(train_loader):
+                overall_survival_months = overall_survival_months.to(device)
+                survival_risk = survival_risk.to(device)
+                patches_embeddings = patches_embeddings.to(device)
+                omics_data = omics_data.to(device)
                 hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
                 predicted_class = torch.topk(Y, 1, dim=1)[1]
 
@@ -92,6 +103,10 @@ def main():
         risk_scores = []
         event_times = []
         for batch_index, (overall_survival_months, survival_risk, omics_data, patches_embeddings) in enumerate(val_loader):
+            overall_survival_months = overall_survival_months.to(device)
+            survival_risk = survival_risk.to(device)
+            patches_embeddings = patches_embeddings.to(device)
+            omics_data = omics_data.to(device)
             with torch.no_grad():
                 hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
             predicted_class = torch.topk(Y, 1, dim=1)[1]

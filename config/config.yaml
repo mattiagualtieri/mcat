@@ -1,8 +1,8 @@
-device: cpu
+device: cuda
 inputs:
   raw_input: data/data.csv
   omics_signatures: data/signatures.csv
-  patch_emb_dir: data/patch_embeddings
+  patch_emb_dir: data/patches
 dataset:
   dataset_file: data/dataset.hdf5
 training:
