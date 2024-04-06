@@ -58,7 +58,7 @@ def main():
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
                                      lr=lr, weight_decay=weight_decay)
 
-        print('Training started')
+        print('-- Started training')
         model.train()
         grad_acc_step = config['training']['grad_acc_step']
         epochs = config['training']['epochs']
@@ -69,15 +69,15 @@ def main():
             for batch_index, (overall_survival_months, survival_risk, omics_data, patches_embeddings) in enumerate(train_loader):
                 overall_survival_months = overall_survival_months.to(device)
                 survival_risk = survival_risk.to(device)
+                survival_risk = survival_risk.unsqueeze(0).to(torch.int64)
                 patches_embeddings = patches_embeddings.to(device)
                 omics_data = [omic_data.to(device) for omic_data in omics_data]
                 hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
-                predicted_class = torch.topk(Y, 1, dim=1)[1]
 
                 if config['training']['loss'] == 'ce':
                     loss = loss_function(Y, survival_risk.long())
                 elif config['training']['loss'] == 'ces':
-                    loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0]).to(device))
+                    loss = loss_function(hazards, survs, survival_risk, c=torch.FloatTensor([0]).to(device))
                 else:
                     raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
                 loss_value = loss.item()
@@ -88,9 +88,9 @@ def main():
 
                 train_loss += loss_value
 
-                if (batch_index + 1) % 100 == 0:
+                if (batch_index + 1) % 32 == 0:
                     print('batch {}, loss: {:.4f}, label: {}, risk: {:.4f}'.format(
-                        batch_index, loss_value, survival_risk.item(), float(risk)))
+                        batch_index, loss_value, survival_risk.item(), float(risk.item())))
                 loss = loss / grad_acc_step
                 loss.backward()
 
@@ -104,7 +104,7 @@ def main():
                                                  np.array(risk_scores))[0]
             print('Epoch: {}, train_loss: {:.4f}, train_c_index: {:.4f}'.format(epoch, train_loss, c_index))
 
-        print('Evaluation started')
+        print('-- Started validation')
         model.eval()
         val_loss = 0.0
         risk_scores = []
@@ -112,16 +112,16 @@ def main():
         for batch_index, (overall_survival_months, survival_risk, omics_data, patches_embeddings) in enumerate(val_loader):
             overall_survival_months = overall_survival_months.to(device)
             survival_risk = survival_risk.to(device)
+            survival_risk = survival_risk.unsqueeze(0).to(torch.int64)
             patches_embeddings = patches_embeddings.to(device)
             omics_data = [omic_data.to(device) for omic_data in omics_data]
             with torch.no_grad():
                 hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
-            predicted_class = torch.topk(Y, 1, dim=1)[1]
 
             if config['training']['loss'] == 'ce':
                 loss = loss_function(Y, survival_risk.long())
             elif config['training']['loss'] == 'ces':
-                loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0]).to(device))
+                loss = loss_function(hazards, survs, survival_risk, c=torch.FloatTensor([0]).to(device))
             else:
                 raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
             loss_value = loss.item()
