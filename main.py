@@ -1,5 +1,6 @@
 import torch.cuda
 import yaml
+import time
 import torch.nn as nn
 
 from torch.utils.data import DataLoader, random_split
@@ -11,8 +12,9 @@ from models.mcat import MultimodalCoAttentionTransformer
 from dataset.dataset import MultimodalDataset
 
 
-def train(epoch, config, device, train_loader, model, loss_function, grad_acc_step, optimizer):
+def train(epoch, config, device, train_loader, model, loss_function, optimizer):
     model.train()
+    grad_acc_step = config['training']['grad_acc_step']
     train_loss = 0.0
     risk_scores = []
     event_times = []
@@ -122,6 +124,7 @@ def main():
         # Model
         omics_sizes = get_omics_sizes_from_dataset(dataset_file)
         model = MultimodalCoAttentionTransformer(omic_sizes=omics_sizes)
+        model = nn.DataParallel(model)
         model.to(device=device)
         # Loss function
         if config['training']['loss'] == 'ce':
@@ -138,13 +141,15 @@ def main():
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
                                      lr=lr, weight_decay=weight_decay)
 
-        print('-- Started training')
+        print('Training started...')
         model.train()
-        grad_acc_step = config['training']['grad_acc_step']
         epochs = config['training']['epochs']
         for epoch in range(epochs):
-            train(epoch, config, device, train_loader, model, loss_function, grad_acc_step, optimizer)
+            start_time = time.time()
+            train(epoch, config, device, train_loader, model, loss_function, optimizer)
             validate(epoch, config, device, val_loader, model, loss_function)
+            end_time = time.time()
+            print('Time elapsed for epoch {}: {:.0f}s'.format(epoch, end_time - start_time))
 
         validate('final validation', config, device, val_loader, model, loss_function)
 
