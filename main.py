@@ -1,3 +1,4 @@
+import torch.cuda
 import yaml
 import torch.nn as nn
 
@@ -18,7 +19,13 @@ def main():
     if device == 'cuda' and not torch.cuda.is_available():
         print('CUDA not available')
         device = 'cpu'
-    print(f'Running on {device}')
+    elif device == 'cuda' and torch.cuda.is_available():
+        print('CUDA is available!')
+        print(f'Device count: {torch.cuda.device_count()}')
+        current_device_index = torch.cuda.current_device()
+        print(f'Current device index: {current_device_index}')
+        print(f'Current device: {torch.cuda.get_device_name(current_device_index)}')
+    print(f'Running on {device.upper()}')
 
     dataset_file = config['dataset']['dataset_file']
 
@@ -70,7 +77,7 @@ def main():
                 if config['training']['loss'] == 'ce':
                     loss = loss_function(Y, survival_risk.long())
                 elif config['training']['loss'] == 'ces':
-                    loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0]))
+                    loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0], device=device))
                 else:
                     raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
                 loss_value = loss.item()
@@ -114,7 +121,7 @@ def main():
             if config['training']['loss'] == 'ce':
                 loss = loss_function(Y, survival_risk.long())
             elif config['training']['loss'] == 'ces':
-                loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0]))
+                loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0], device=device))
             else:
                 raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
             loss_value = loss.item()
