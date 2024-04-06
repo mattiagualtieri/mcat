@@ -77,7 +77,7 @@ def main():
                 if config['training']['loss'] == 'ce':
                     loss = loss_function(Y, survival_risk.long())
                 elif config['training']['loss'] == 'ces':
-                    loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0], device=device))
+                    loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0]).to(device))
                 else:
                     raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
                 loss_value = loss.item()
@@ -121,7 +121,7 @@ def main():
             if config['training']['loss'] == 'ce':
                 loss = loss_function(Y, survival_risk.long())
             elif config['training']['loss'] == 'ces':
-                loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0], device=device))
+                loss = loss_function(hazards, survs, predicted_class, c=torch.FloatTensor([0]).to(device))
             else:
                 raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
             loss_value = loss.item()
