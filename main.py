@@ -63,7 +63,7 @@ def main():
                 overall_survival_months = overall_survival_months.to(device)
                 survival_risk = survival_risk.to(device)
                 patches_embeddings = patches_embeddings.to(device)
-                omics_data = omics_data.to(device)
+                omics_data = [omic_data.to(device) for omic_data in omics_data]
                 hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
                 predicted_class = torch.topk(Y, 1, dim=1)[1]
 
@@ -106,7 +106,7 @@ def main():
             overall_survival_months = overall_survival_months.to(device)
             survival_risk = survival_risk.to(device)
             patches_embeddings = patches_embeddings.to(device)
-            omics_data = omics_data.to(device)
+            omics_data = [omic_data.to(device) for omic_data in omics_data]
             with torch.no_grad():
                 hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
             predicted_class = torch.topk(Y, 1, dim=1)[1]
