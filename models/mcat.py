@@ -79,7 +79,7 @@ class MultimodalCoAttentionTransformer(nn.Module):
                                                         activation='relu')
         self.path_transformer = nn.TransformerEncoder(path_encoder_layer, num_layers=2)
 
-        # Attention Head (rho_H)
+        # WSI Global Attention Pooling (rho_H)
         self.path_attention_head = AttentionNetGated(n_classes=1)
         self.path_rho = nn.Sequential(*[nn.Linear(256, 256), nn.ReLU(), nn.Dropout(dropout)])
 
@@ -88,7 +88,7 @@ class MultimodalCoAttentionTransformer(nn.Module):
                                                         activation='relu')
         self.omic_transformer = nn.TransformerEncoder(omic_encoder_layer, num_layers=2)
 
-        # Attention Head (rho_G)
+        # Genomic Global Attention Pooling (rho_G)
         self.omic_attention_head = AttentionNetGated(n_classes=1)
         self.omic_rho = nn.Sequential(*[nn.Linear(256, 256), nn.ReLU(), nn.Dropout(dropout)])
 
@@ -106,7 +106,7 @@ class MultimodalCoAttentionTransformer(nn.Module):
         H_bag = self.H(wsi).squeeze(0)
 
         # N Omics Fully connected layers
-        G_omic = [self.G[index].forward(omic) for index, omic in enumerate(omics)]
+        G_omic = [self.G[index].forward(omic.type(torch.float32)) for index, omic in enumerate(omics)]
         # G_bag: (Nxd_k)
         G_bag = torch.stack(G_omic).squeeze(1)
 

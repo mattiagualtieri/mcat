@@ -15,12 +15,12 @@ def create_dataset():
 
     dataset_file = config['dataset']['dataset_file']
     if os.path.exists(dataset_file):
-        print(f'Dataset {dataset_file} already exists, removing')
-        os.remove(dataset_file)
+        print(f'Dataset {dataset_file} already exists, exiting')
+        return
 
     raw_input = config['inputs']['raw_input']
 
-    preprocess_labels(raw_input, dataset_file)
+    preprocess_clinical(raw_input, dataset_file)
     print(f'Created dataset {dataset_file}')
 
     omics_signatures = config['inputs']['omics_signatures']
@@ -34,7 +34,7 @@ def create_dataset():
     print('Note: skipping all patches creation and embedding part...')
     # - The matrix is created into a .pt file, that we must read and add to the dataset
     patch_emb_dir = config['inputs']['patch_emb_dir']
-    preprocess_patch_embeddings(patch_emb_dir, dataset_file)
+    preprocess_patch_embeddings(raw_input, patch_emb_dir, dataset_file)
     print(f'Added patch embeddings to dataset {dataset_file}')
 
     print('Removing incomplete samples...')

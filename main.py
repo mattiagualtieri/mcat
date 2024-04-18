@@ -16,34 +16,37 @@ def train(epoch, config, device, train_loader, model, loss_function, optimizer):
     model.train()
     grad_acc_step = config['training']['grad_acc_step']
     train_loss = 0.0
-    risk_scores = []
-    event_times = []
-    for batch_index, (overall_survival_months, survival_risk, omics_data, patches_embeddings) in enumerate(
+    risk_scores = np.zeros((len(train_loader)))
+    censorships = np.zeros((len(train_loader)))
+    event_times = np.zeros((len(train_loader)))
+    for batch_index, (survival_months, survival_class, censorship, omics_data, patches_embeddings) in enumerate(
             train_loader):
-        overall_survival_months = overall_survival_months.to(device)
-        survival_risk = survival_risk.to(device)
-        survival_risk = survival_risk.unsqueeze(0).to(torch.int64)
+        survival_months = survival_months.to(device)
+        survival_class = survival_class.to(device)
+        survival_class = survival_class.unsqueeze(0).to(torch.int64)
+        censorship = censorship.type(torch.FloatTensor).to(device)
         patches_embeddings = patches_embeddings.to(device)
         omics_data = [omic_data.to(device) for omic_data in omics_data]
         hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
 
         if config['training']['loss'] == 'ce':
-            loss = loss_function(Y, survival_risk.long())
+            loss = loss_function(Y, survival_class.long())
         elif config['training']['loss'] == 'ces':
-            loss = loss_function(hazards, survs, survival_risk, c=torch.FloatTensor([0]).to(device))
+            loss = loss_function(hazards, survs, survival_class, c=censorship, alpha=0.0)
         else:
             raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
         loss_value = loss.item()
 
         risk = -torch.sum(survs, dim=1).detach().cpu().numpy()
-        risk_scores.append(risk.item())
-        event_times.append(overall_survival_months.item())
+        risk_scores[batch_index] = risk.item()
+        censorships[batch_index] = censorship.item()
+        event_times[batch_index] = survival_months.item()
 
         train_loss += loss_value
 
         if (batch_index + 1) % 32 == 0:
-            print('\tbatch: {}, loss: {:.4f}, label: {}, risk: {:.4f}'.format(
-                batch_index, loss_value, survival_risk.item(), float(risk.item())))
+            print('\tbatch: {}, loss: {:.4f}, label: {}, survival_months: {}, risk: {:.4f}'.format(
+                batch_index, loss_value, survival_class.item(), survival_months.item(), float(risk.item())))
         loss = loss / grad_acc_step
         loss.backward()
 
@@ -51,45 +54,47 @@ def train(epoch, config, device, train_loader, model, loss_function, optimizer):
             optimizer.step()
             optimizer.zero_grad()
 
-    # calculate loss and error for epoch
+    # Calculate loss and error for epoch
     train_loss /= len(train_loader)
-    c_index = concordance_index_censored(np.ones((len(train_loader))).astype(bool), np.array(event_times),
-                                         np.array(risk_scores))[0]
+    c_index = concordance_index_censored((1 - censorships).astype(bool), event_times, risk_scores)[0]
     print('Epoch: {}, train_loss: {:.4f}, train_c_index: {:.4f}'.format(epoch, train_loss, c_index))
 
 
 def validate(epoch, config, device, val_loader, model, loss_function):
     model.eval()
     val_loss = 0.0
-    risk_scores = []
-    event_times = []
-    for batch_index, (overall_survival_months, survival_risk, omics_data, patches_embeddings) in enumerate(val_loader):
-        overall_survival_months = overall_survival_months.to(device)
-        survival_risk = survival_risk.to(device)
-        survival_risk = survival_risk.unsqueeze(0).to(torch.int64)
+    risk_scores = np.zeros((len(val_loader)))
+    censorships = np.zeros((len(val_loader)))
+    event_times = np.zeros((len(val_loader)))
+    for batch_index, (survival_months, survival_class, censorship, omics_data, patches_embeddings) in enumerate(
+            val_loader):
+        survival_months = survival_months.to(device)
+        survival_class = survival_class.to(device)
+        survival_class = survival_class.unsqueeze(0).to(torch.int64)
+        censorship = censorship.type(torch.FloatTensor).to(device)
         patches_embeddings = patches_embeddings.to(device)
         omics_data = [omic_data.to(device) for omic_data in omics_data]
         with torch.no_grad():
             hazards, survs, Y, attention_scores = model(wsi=patches_embeddings, omics=omics_data)
 
         if config['training']['loss'] == 'ce':
-            loss = loss_function(Y, survival_risk.long())
+            loss = loss_function(Y, survival_class.long())
         elif config['training']['loss'] == 'ces':
-            loss = loss_function(hazards, survs, survival_risk, c=torch.FloatTensor([0]).to(device))
+            loss = loss_function(hazards, survs, survival_class, c=censorship, alpha=0.0)
         else:
             raise RuntimeError(f'Loss "{config["training"]["loss"]}" not implemented')
         loss_value = loss.item()
 
         risk = -torch.sum(survs, dim=1).cpu().numpy()
-        risk_scores.append(risk.item())
-        event_times.append(overall_survival_months.item())
+        risk_scores[batch_index] = risk.item()
+        censorships[batch_index] = censorship.item()
+        event_times[batch_index] = survival_months.item()
 
         val_loss += loss_value
 
     # calculate loss and error
     val_loss /= len(val_loader)
-    c_index = concordance_index_censored(np.ones((len(val_loader))).astype(bool), np.array(event_times),
-                                         np.array(risk_scores))[0]
+    c_index = concordance_index_censored((1 - censorships).astype(bool), event_times, risk_scores)[0]
     print('Epoch: {}, val_loss: {:.4f}, val_c_index: {:.4f}'.format(epoch, val_loss, c_index))
 
 

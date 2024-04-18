@@ -1,6 +1,6 @@
 device: cuda
 inputs:
-  raw_input: data/data.csv
+  raw_input: data/tcga_luad.csv
   omics_signatures: data/signatures.csv
   patch_emb_dir: data/patches
 dataset:
