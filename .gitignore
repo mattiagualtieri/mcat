@@ -1,4 +1,6 @@
 .idea
 data
-logs
+sbatch
+*.sbatch
+experiments
 __pycache__

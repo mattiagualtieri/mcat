@@ -6,7 +6,7 @@ inputs:
 dataset:
   dataset_file: data/dataset.hdf5
 training:
-  train_size: 0.75
+  train_size: 0.8
   loss: ces
   epochs: 20
   lr: 0.0002
